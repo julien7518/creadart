@@ -11,24 +11,25 @@ import {
 } from "@/components/ui/table";
 import Link from "next/link";
 
+interface leaderboardData {
+  rank: number;
+  name: string;
+  wins: number;
+  losses: number;
+}
+
 export default function Home() {
-  const leaderboardData = [
-    { rank: 1, name: "Julien", wins: 8, losses: 2 },
-    { rank: 2, name: "Alex", wins: 6, losses: 4 },
-    { rank: 3, name: "Marie", wins: 5, losses: 5 },
-    { rank: 4, name: "Thomas", wins: 4, losses: 6 },
-    { rank: 5, name: "Sophie", wins: 3, losses: 7 },
-  ];
+  const leaderboardData: leaderboardData[] = [];
 
   return (
     <PageShell pageName="CreaDart" isHome>
       <div className="flex justify-center gap-4 mb-8">
-        <Link href="/game">
-          <Button size="lg">Start New Game</Button>
+        <Link href="/game/new/">
+          <Button size="lg">Nouvelle partie</Button>
         </Link>
         <Link href="/history">
           <Button size="lg" variant="outline">
-            View Match History
+            Historique
           </Button>
         </Link>
       </div>
@@ -41,17 +42,19 @@ export default function Home() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Rank</TableHead>
-                <TableHead>Player</TableHead>
-                <TableHead>Wins</TableHead>
-                <TableHead>Losses</TableHead>
+                <TableHead>Rang</TableHead>
+                <TableHead>Joueur</TableHead>
+                <TableHead>Victoires</TableHead>
+                <TableHead>Défaites</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {leaderboardData.map((player) => (
-                <TableRow key={player.rank}>
+                <TableRow>
                   <TableCell>{player.rank}</TableCell>
-                  <TableCell>{player.name}</TableCell>
+                  <Link key={player.rank} href={`/players/${player.name}`}>
+                    <TableCell>{player.name}</TableCell>
+                  </Link>
                   <TableCell>{player.wins}</TableCell>
                   <TableCell>{player.losses}</TableCell>
                 </TableRow>

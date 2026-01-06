@@ -7,7 +7,7 @@ export default function BackButton() {
     <Link href="/">
       <Button variant="outline">
         <ArrowLeft />
-        Back
+        Retour
       </Button>
     </Link>
   );
