@@ -187,7 +187,7 @@ export default function GamePage({
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-screen mx-auto px-4 py-4">
+      <div className="flex items-center justify-center h-screen mx-auto  py-4">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-red-500">Erreur</CardTitle>
@@ -205,7 +205,7 @@ export default function GamePage({
 
   if (!game) {
     return (
-      <div className="flex items-center justify-center h-screen mx-auto px-4 py-4">
+      <div className="flex items-center justify-center h-screen mx-auto  py-4">
         <p>Partie non trouvée</p>
       </div>
     );
@@ -214,7 +214,7 @@ export default function GamePage({
   // Vérifier si la partie est terminée
   if (game.isFinished) {
     return (
-      <div className="flex items-center justify-center h-screen mx-auto px-4 py-4">
+      <div className="flex items-center justify-center h-screen mx-auto  py-4">
         <Card className="w-full max-w-md text-center">
           <CardHeader>
             <CardTitle className="text-2xl">🎉 Partie Terminée 🎉</CardTitle>
@@ -243,7 +243,7 @@ export default function GamePage({
   }
 
   return (
-    <div className="min-h-screen bg-background py-4 px-4">
+    <div className="min-h-screen bg-background py-4 ">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Card du joueur actuel */}
         <Card>

@@ -47,7 +47,7 @@ export default async function Home() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-2xl font-black text-green-600">
+                  <p className="text-2xl font-black">
                     {leaderboardData[0].wins} 🏆
                   </p>
                   <p className="text-sm text-muted-foreground">
@@ -68,28 +68,41 @@ export default async function Home() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Rang</TableHead>
+                  <TableHead className="text-center">Rang</TableHead>
                   <TableHead>Joueur</TableHead>
                   <TableHead>Victoires</TableHead>
                   <TableHead>Défaites</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {leaderboardData.slice(1).map((player) => (
-                  <TableRow key={player.username}>
-                    <TableCell>{player.rank}</TableCell>
-                    <TableCell>
-                      <Link
-                        href={`/players/${player.username}`}
-                        className="hover:underline"
-                      >
-                        {player.name}
-                      </Link>
-                    </TableCell>
-                    <TableCell>{player.wins}</TableCell>
-                    <TableCell>{player.losses}</TableCell>
-                  </TableRow>
-                ))}
+                {leaderboardData.slice(1).map((player) => {
+                  // Déterminer la couleur et l'emoji en fonction du rang
+                  let rankDisplay = String(player.rank);
+
+                  if (player.rank === 2) {
+                    rankDisplay = "🥈";
+                  } else if (player.rank === 3) {
+                    rankDisplay = "🥉";
+                  }
+
+                  return (
+                    <TableRow key={player.username}>
+                      <TableCell className="text-center">
+                        {rankDisplay}
+                      </TableCell>
+                      <TableCell>
+                        <Link
+                          href={`/players/${player.username}`}
+                          className="hover:underline"
+                        >
+                          {player.name}
+                        </Link>
+                      </TableCell>
+                      <TableCell>{player.wins}</TableCell>
+                      <TableCell>{player.losses}</TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </CardContent>
