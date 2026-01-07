@@ -2,6 +2,8 @@ import { PageShell } from "@/components/layout/page-shell";
 import { getGameData } from "./get-game";
 import GamePageClient from "./page-client";
 
+export const dynamic = "force-dynamic";
+
 export default async function GamePageWrapper({
   params,
 }: {

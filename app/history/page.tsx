@@ -12,6 +12,8 @@ import {
 import { getAllMatches } from "@/lib/matches";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 export default async function MatchHistory() {
   const matches = await getAllMatches();
 

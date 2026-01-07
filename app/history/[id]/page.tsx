@@ -16,6 +16,8 @@ interface MatchDetailsPageProps {
   };
 }
 
+export const dynamic = "force-dynamic";
+
 export default async function MatchDetailsPage({
   params,
 }: MatchDetailsPageProps) {
@@ -52,13 +54,13 @@ export default async function MatchDetailsPage({
                 <p className="text-sm text-muted-foreground">
                   Date de création
                 </p>
-                <p>{match.created_at.toLocaleString()}</p>
+                <p>{match.created_at.toLocaleString("fr")}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Date de fin</p>
                 <p>
                   {match.finished_at
-                    ? match.finished_at.toLocaleString()
+                    ? match.finished_at.toLocaleString("fr")
                     : "En cours"}
                 </p>
               </div>

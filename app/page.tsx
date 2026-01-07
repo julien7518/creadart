@@ -14,6 +14,8 @@ import { getLeaderboard } from "@/lib/leaderboard";
 import { getOngoingGames } from "@/lib/games";
 import { PlayerCreationButton } from "@/components/player-creation-button";
 
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
   const leaderboardData = await getLeaderboard();
   const ongoingGames = await getOngoingGames();
