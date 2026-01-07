@@ -1,4 +1,5 @@
-import PageShell from "@/components/layout/page-shell";
+import { PageShell } from "@/components/layout/page-shell";
+import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
   Table,
@@ -8,54 +9,14 @@ import {
   TableBody,
   TableCell,
 } from "@/components/ui/table";
+import { getAllMatches } from "@/lib/matches";
+import Link from "next/link";
 
-export default function MatchHistory() {
-  // Mock data for match history
-  const matchHistoryData = [
-    {
-      id: 1,
-      date: "2024-01-15",
-      players: "Julien vs Alex",
-      winner: "Julien",
-      score: "150-120",
-      gameType: "501",
-    },
-    {
-      id: 2,
-      date: "2024-01-14",
-      players: "Marie vs Thomas",
-      winner: "Marie",
-      score: "100-80",
-      gameType: "301",
-    },
-    {
-      id: 3,
-      date: "2024-01-13",
-      players: "Sophie vs Alex",
-      winner: "Alex",
-      score: "120-60",
-      gameType: "501",
-    },
-    {
-      id: 4,
-      date: "2024-01-12",
-      players: "Julien vs Marie",
-      winner: "Julien",
-      score: "150-100",
-      gameType: "501",
-    },
-    {
-      id: 5,
-      date: "2024-01-11",
-      players: "Thomas vs Sophie",
-      winner: "Thomas",
-      score: "80-60",
-      gameType: "301",
-    },
-  ];
+export default async function MatchHistory() {
+  const matches = await getAllMatches();
 
   return (
-    <PageShell pageName="Historique" isHome={false}>
+    <PageShell pageName="Historique" className="mb-8">
       <Card className="w-full max-w-6xl mx-auto">
         <CardHeader>
           <CardTitle className="text-2xl">Parties récentes</CardTitle>
@@ -64,21 +25,23 @@ export default function MatchHistory() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Players</TableHead>
-                <TableHead>Winner</TableHead>
-                <TableHead>Score</TableHead>
-                <TableHead>Game Type</TableHead>
+                <TableHead>Match</TableHead>
+                <TableHead>Gagnant</TableHead>
+                <TableHead></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {matchHistoryData.map((match) => (
+              {matches.map((match) => (
                 <TableRow key={match.id}>
-                  <TableCell>{match.date}</TableCell>
-                  <TableCell>{match.players}</TableCell>
-                  <TableCell>{match.winner}</TableCell>
-                  <TableCell>{match.score}</TableCell>
-                  <TableCell>{match.gameType}</TableCell>
+                  <TableCell>
+                    {match.player_1_name} - {match.player_2_name}
+                  </TableCell>
+                  <TableCell>{match.winner_name || "En cours"}</TableCell>
+                  <TableCell>
+                    <Link href={`/history/${match.id}`} passHref>
+                      <Button variant="outline">Détails</Button>
+                    </Link>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
