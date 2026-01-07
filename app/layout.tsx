@@ -17,8 +17,43 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CreaDart",
-  description: "Tournois de fléchette CreaTech",
+  title: {
+    default: "CreaDart",
+    template: "%s • CreaDart",
+  },
+  description: "Tournois de fléchette des CreaTechs",
+  applicationName: "CreaDart",
+  keywords: [
+    "fléchettes",
+    "dart",
+    "tournoi",
+    "score",
+    "CreaTech",
+    "Next.js",
+    "Neon",
+  ],
+  authors: [{ name: "Julien Fernandes" }],
+  creator: "Julien Fernandes",
+  publisher: "CreaDart",
+  metadataBase: new URL("https://creadart.vercel.app"),
+  openGraph: {
+    type: "website",
+    locale: "fr_FR",
+    url: "https://creadart.vercel.app",
+    title: "CreaDart",
+    description: "Tournois de fléchette des CreaTechs",
+    siteName: "CreaDart",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "CreaDart",
+    description: "Tournois de fléchette des CreaTechs",
+    creator: "@julien_7518",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({

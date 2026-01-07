@@ -7,7 +7,7 @@ interface PlayerStats {
   username: string;
   display_name: string;
   total_points: number;
-  total_rounds_played: number; // Nombre total de rounds joués
+  total_rounds_played: number;
   games_played: number;
   wins: number;
   losses: number;
