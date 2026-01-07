@@ -16,6 +16,8 @@ interface MatchDetailsPageProps {
   };
 }
 
+export const dynamic = "force-dynamic";
+
 export default async function MatchDetailsPage({
   params,
 }: MatchDetailsPageProps) {

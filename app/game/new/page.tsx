@@ -1,6 +1,8 @@
 import { sql } from "@/lib/db";
 import NewGame from "./page-client";
 
+export const dynamic = "force-dynamic";
+
 export default async function NewGamePage() {
   const players = await sql<{ username: string; display_name: string }[]>`
     SELECT username, display_name
