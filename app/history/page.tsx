@@ -9,20 +9,14 @@ import {
   TableBody,
   TableCell,
 } from "@/components/ui/table";
-
-interface MatchData {
-  id: string;
-  date: string;
-  player1: string;
-  player2: string;
-  winner: string;
-}
+import { getAllMatches } from "@/lib/matches";
+import Link from "next/link";
 
 export default async function MatchHistory() {
-  const matchHistoryData: MatchData[] = [];
+  const matches = await getAllMatches();
 
   return (
-    <PageShell pageName="Historique" isHome={false}>
+    <PageShell pageName="Historique" className="mb-8">
       <Card className="w-full max-w-6xl mx-auto">
         <CardHeader>
           <CardTitle className="text-2xl">Parties récentes</CardTitle>
@@ -31,21 +25,22 @@ export default async function MatchHistory() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Joueur 1</TableHead>
-                <TableHead>Joueur 2</TableHead>
+                <TableHead>Match</TableHead>
                 <TableHead>Gagnant</TableHead>
+                <TableHead></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {matchHistoryData.map((match) => (
+              {matches.map((match) => (
                 <TableRow key={match.id}>
-                  <TableCell>{match.date}</TableCell>
-                  <TableCell>{match.player1}</TableCell>
-                  <TableCell>{match.player2}</TableCell>
-                  <TableCell>{match.winner}</TableCell>
                   <TableCell>
-                    <Button onClick={() => {}}>Détails</Button>
+                    {match.player_1_name} - {match.player_2_name}
+                  </TableCell>
+                  <TableCell>{match.winner_name || "En cours"}</TableCell>
+                  <TableCell>
+                    <Link href={`/history/${match.id}`} passHref>
+                      <Button variant="outline">Détails</Button>
+                    </Link>
                   </TableCell>
                 </TableRow>
               ))}
