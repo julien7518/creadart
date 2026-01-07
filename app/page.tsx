@@ -20,40 +20,81 @@ export default async function Home() {
 
   return (
     <PageShell pageName="CreaDart" className="mb-8" isHome>
-      <Card className="w-full max-w-4xl mx-auto mb-8">
-        <CardHeader>
-          <CardTitle className="text-xl">Classement</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Rang</TableHead>
-                <TableHead>Joueur</TableHead>
-                <TableHead>Victoires</TableHead>
-                <TableHead>Défaites</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {leaderboardData.map((player) => (
-                <TableRow key={player.username}>
-                  <TableCell>{player.rank}</TableCell>
-                  <TableCell>
+      <div className="w-full max-w-4xl mx-auto mb-8">
+        {/* Premier joueur mis en valeur */}
+        {leaderboardData.length > 0 && (
+          <Card className="mb-6 border-2 border-yellow-500 bg-yellow-50/50">
+            <CardHeader>
+              <CardTitle className="text-xl flex items-center gap-2">
+                Top player
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div>
                     <Link
-                      href={`/players/${player.username}`}
+                      href={`/players/${leaderboardData[0].username}`}
                       className="hover:underline"
                     >
-                      {player.name}
+                      <h3 className="text-xl font-bold">
+                        {leaderboardData[0].name}
+                      </h3>
                     </Link>
-                  </TableCell>
-                  <TableCell>{player.wins}</TableCell>
-                  <TableCell>{player.losses}</TableCell>
+                    <p className="text-sm text-muted-foreground">
+                      @{leaderboardData[0].username}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-black text-green-600">
+                    {leaderboardData[0].wins} 🏆
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {leaderboardData[0].losses} défaites
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Tableau des autres joueurs à partir du rang 2 */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="">Classement complet</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Rang</TableHead>
+                  <TableHead>Joueur</TableHead>
+                  <TableHead>Victoires</TableHead>
+                  <TableHead>Défaites</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+              </TableHeader>
+              <TableBody>
+                {leaderboardData.slice(1).map((player) => (
+                  <TableRow key={player.username}>
+                    <TableCell>{player.rank}</TableCell>
+                    <TableCell>
+                      <Link
+                        href={`/players/${player.username}`}
+                        className="hover:underline"
+                      >
+                        {player.name}
+                      </Link>
+                    </TableCell>
+                    <TableCell>{player.wins}</TableCell>
+                    <TableCell>{player.losses}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
 
       <div className="flex-col mb-8">
         <div className="flex justify-center gap-4 mb-2">

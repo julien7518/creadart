@@ -7,6 +7,7 @@ interface PlayerStats {
   username: string;
   display_name: string;
   total_points: number;
+  total_rounds_played: number; // Nombre total de rounds joués
   games_played: number;
   wins: number;
   losses: number;
@@ -58,43 +59,16 @@ export default async function PlayerPage({
       -- Points totaux = valeur directe depuis la colonne total_points (mise à jour à chaque tour)
       p.total_points AS total_score,
 
-      -- Moyenne par tour = somme des écarts entre deux rounds / nombre d'écarts
-      COALESCE(
-        SUM(
-          CASE
-            WHEN ar.current_player_id = p.id THEN
-              CASE
-                WHEN am.player_1_id = p.id THEN
-                  COALESCE(
-                    (SELECT mr_prev.player_1_score
-                     FROM match_rounds mr_prev
-                     WHERE mr_prev.match_id = ar.match_id
-                       AND mr_prev.round_number = ar.round_number - 1),
-                    301
-                  ) - ar.player_1_score
-                WHEN am.player_2_id = p.id THEN
-                  COALESCE(
-                    (SELECT mr_prev.player_2_score
-                     FROM match_rounds mr_prev
-                     WHERE mr_prev.match_id = ar.match_id
-                       AND mr_prev.round_number = ar.round_number - 1),
-                    301
-                  ) - ar.player_2_score
-                ELSE NULL
-              END
-            ELSE NULL
-          END
-        ) /
-        NULLIF(
-          SUM(CASE WHEN ar.current_player_id = p.id THEN 1 ELSE 0 END),
-          0
-        ),
-        0
-      ) AS avg_score,
+      -- Moyenne par tour = calcul simple basé sur les valeurs pré-calculées
+      -- total_points / total_rounds_played
+      CASE
+        WHEN p.total_rounds_played > 0 THEN 
+          p.total_points::FLOAT / p.total_rounds_played
+        ELSE 0
+      END AS avg_score,
       
-      -- Nombre de fléchettes lancées = 3 * nombre de rounds où c'était son tour
-      -- On exclut le dernier round (pas encore terminé) mais on inclut les matchs en cours
-      SUM(CASE WHEN ar.current_player_id = p.id AND ar.is_last_round = FALSE THEN 1 ELSE 0 END) * 3 AS darts_thrown
+      -- Nombre de fléchettes lancées = 3 * total_rounds_played
+      p.total_rounds_played * 3 AS darts_thrown
     FROM players p
     LEFT JOIN completed_matches cm ON p.id = cm.player_1_id OR p.id = cm.player_2_id
     LEFT JOIN all_matches am ON p.id = am.player_1_id OR p.id = am.player_2_id

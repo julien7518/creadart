@@ -24,11 +24,13 @@ export async function submitTurn(matchId: string, totalScore: number, currentPla
     // Mettre à jour la partie avec le nouveau tour
     const updatedGame = await updateGameWithTurn(matchId, totalScore);
     
-    // Mettre à jour le total_points du joueur
+    // Mettre à jour les statistiques du joueur
     if (currentPlayerId) {
       await sql`
         UPDATE players 
-        SET total_points = total_points + ${totalScore}
+        SET 
+          total_points = total_points + ${totalScore},
+          total_rounds_played = total_rounds_played + 1
         WHERE id = ${currentPlayerId}
       `;
     }

@@ -1,3 +1,4 @@
+import { PageShell } from "@/components/layout/page-shell";
 import { getGameData } from "./get-game";
 import GamePageClient from "./page-client";
 
@@ -9,5 +10,9 @@ export default async function GamePageWrapper({
   const { id } = await params;
   const initialGame = await getGameData(id);
 
-  return <GamePageClient initialGame={initialGame} />;
+  return (
+    <PageShell pageName="">
+      <GamePageClient initialGame={initialGame} />
+    </PageShell>
+  );
 }
