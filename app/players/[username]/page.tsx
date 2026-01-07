@@ -6,11 +6,13 @@ import { notFound } from "next/navigation";
 interface PlayerStats {
   username: string;
   display_name: string;
+  total_points: number;
   games_played: number;
   wins: number;
   losses: number;
   total_score: number;
   avg_score: number;
+  darts_thrown: number;
 }
 
 export default async function PlayerPage({
@@ -21,33 +23,82 @@ export default async function PlayerPage({
   const { username } = await params;
 
   const [player] = await sql<PlayerStats[]>`
+    WITH all_matches AS (
+      -- Tous les matchs (terminés et en cours)
+      SELECT id, player_1_id, player_2_id, winner_id, finished_at 
+      FROM matches
+    ),
+    completed_matches AS (
+      -- Seuls les matchs terminés sont pris en compte pour les victoires/défaites
+      SELECT id, player_1_id, player_2_id, winner_id 
+      FROM matches 
+      WHERE winner_id IS NOT NULL AND finished_at IS NOT NULL
+    ),
+    all_rounds AS (
+      -- Tous les rounds de tous les matchs
+      SELECT 
+        mr.match_id,
+        mr.round_number,
+        mr.current_player_id,
+        mr.player_1_score,
+        mr.player_2_score,
+        -- Vérifier si c'est le dernier round
+        (SELECT COUNT(*) FROM match_rounds mr2 WHERE mr2.match_id = mr.match_id) = mr.round_number AS is_last_round
+      FROM match_rounds mr
+      JOIN all_matches am ON mr.match_id = am.id
+    )
+    
     SELECT
       p.username,
       p.display_name,
-      COUNT(DISTINCT m.id) AS games_played,
-      COUNT(m.id) FILTER (WHERE m.winner_id = p.id) AS wins,
-      COUNT(m.id) FILTER (
-        WHERE m.winner_id IS NOT NULL AND m.winner_id != p.id
-      ) AS losses,
-      COALESCE(SUM(
-        CASE
-          WHEN mr.player_1_score IS NOT NULL AND m.player_1_id = p.id THEN mr.player_1_score
-          WHEN mr.player_2_score IS NOT NULL AND m.player_2_id = p.id THEN mr.player_2_score
-          ELSE 0
-        END
-      ), 0) AS total_score,
+      COUNT(DISTINCT am.id) AS games_played,
+      COUNT(DISTINCT CASE WHEN cm.winner_id = p.id THEN cm.id END) AS wins,
+      COUNT(DISTINCT CASE WHEN cm.winner_id != p.id AND cm.winner_id IS NOT NULL THEN cm.id END) AS losses,
+      
+      -- Points totaux = valeur directe depuis la colonne total_points (mise à jour à chaque tour)
+      p.total_points AS total_score,
 
-      COALESCE(AVG(
-        CASE
-          WHEN mr.player_1_score IS NOT NULL AND m.player_1_id = p.id THEN mr.player_1_score
-          WHEN mr.player_2_score IS NOT NULL AND m.player_2_id = p.id THEN mr.player_2_score
-        END
-      ), 0) AS avg_score
+      -- Moyenne par tour = somme des écarts entre deux rounds / nombre d'écarts
+      COALESCE(
+        SUM(
+          CASE
+            WHEN ar.current_player_id = p.id THEN
+              CASE
+                WHEN am.player_1_id = p.id THEN
+                  COALESCE(
+                    (SELECT mr_prev.player_1_score
+                     FROM match_rounds mr_prev
+                     WHERE mr_prev.match_id = ar.match_id
+                       AND mr_prev.round_number = ar.round_number - 1),
+                    301
+                  ) - ar.player_1_score
+                WHEN am.player_2_id = p.id THEN
+                  COALESCE(
+                    (SELECT mr_prev.player_2_score
+                     FROM match_rounds mr_prev
+                     WHERE mr_prev.match_id = ar.match_id
+                       AND mr_prev.round_number = ar.round_number - 1),
+                    301
+                  ) - ar.player_2_score
+                ELSE NULL
+              END
+            ELSE NULL
+          END
+        ) /
+        NULLIF(
+          SUM(CASE WHEN ar.current_player_id = p.id THEN 1 ELSE 0 END),
+          0
+        ),
+        0
+      ) AS avg_score,
+      
+      -- Nombre de fléchettes lancées = 3 * nombre de rounds où c'était son tour
+      -- On exclut le dernier round (pas encore terminé) mais on inclut les matchs en cours
+      SUM(CASE WHEN ar.current_player_id = p.id AND ar.is_last_round = FALSE THEN 1 ELSE 0 END) * 3 AS darts_thrown
     FROM players p
-    LEFT JOIN matches m
-      ON p.id = m.player_1_id OR p.id = m.player_2_id
-    LEFT JOIN match_rounds mr
-      ON mr.match_id = m.id
+    LEFT JOIN completed_matches cm ON p.id = cm.player_1_id OR p.id = cm.player_2_id
+    LEFT JOIN all_matches am ON p.id = am.player_1_id OR p.id = am.player_2_id
+    LEFT JOIN all_rounds ar ON ar.match_id = am.id
     WHERE p.username = ${username}
     GROUP BY p.id;
   `;
@@ -71,7 +122,11 @@ export default async function PlayerPage({
           <StatCard title="👎 Défaites" value={player.losses} />
           <StatCard
             title="🔢 Ratio"
-            value={Number((player.wins / player.games_played).toFixed(2))}
+            value={
+              player.games_played > 0
+                ? Number((player.wins / player.games_played).toFixed(2))
+                : 0
+            }
           />
           <StatCard
             title="🔥 Total de points"
@@ -80,6 +135,10 @@ export default async function PlayerPage({
           <StatCard
             title="📊 Moyenne par tour"
             value={Number(Number(player.avg_score ?? 0).toFixed(2))}
+          />
+          <StatCard
+            title="🎯 Fléchettes lancées"
+            value={player.darts_thrown ?? 0}
           />
         </div>
 
@@ -94,6 +153,7 @@ export default async function PlayerPage({
             défaites. Il a marqué un total de <b>{player.total_score ?? 0}</b>{" "}
             points, avec une moyenne de{" "}
             <b>{Number(player.avg_score ?? 0).toFixed(1)}</b> points par tour.
+            Il a lancé <b>{player.darts_thrown ?? 0}</b> fléchettes au total.
           </CardContent>
         </Card>
       </div>

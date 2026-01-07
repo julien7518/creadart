@@ -9,7 +9,6 @@ interface Player {
   id: string;
   username: string;
   display_name: string;
-  avatar_url: string | null;
   created_at: Date;
 }
 
@@ -19,6 +18,7 @@ interface MatchRound {
   round_number: number;
   player_1_score: number;
   player_2_score: number;
+  current_player_id: string | null;
   created_at: Date;
 }
 
@@ -28,7 +28,6 @@ function mapRowToPlayer(row: Row): Player {
     id: row.id as string,
     username: row.username as string,
     display_name: row.display_name as string,
-    avatar_url: row.avatar_url as string | null,
     created_at: row.created_at as Date,
   };
 }
@@ -52,7 +51,7 @@ export async function createGame(
 ): Promise<GameData> {
   // Récupérer les IDs des joueurs à partir de leurs usernames
   const players = await sql<Row[]>`
-    SELECT id, username, display_name, avatar_url 
+    SELECT id, username, display_name
     FROM players 
     WHERE username IN (${player1Username}, ${player2Username})
   `;
@@ -87,8 +86,8 @@ export async function createGame(
 
   // Créer le premier round avec les scores initiaux
   await sql`
-    INSERT INTO match_rounds (match_id, round_number, player_1_score, player_2_score)
-    VALUES (${newMatch.id}, 1, ${initialScore}, ${initialScore})
+    INSERT INTO match_rounds (match_id, round_number, player_1_score, player_2_score, current_player_id)
+    VALUES (${newMatch.id}, 1, ${initialScore}, ${initialScore}, ${player1.id})
   `;
 
   return {
@@ -136,7 +135,7 @@ export async function getGameById(matchId: string): Promise<GameData | null> {
 
   // Récupérer les joueurs
   const players = await sql<Row[]>`
-    SELECT id, username, display_name, avatar_url 
+    SELECT id, username, display_name
     FROM players 
     WHERE id IN (${matchData.player_1_id}, ${matchData.player_2_id})
   `;
@@ -172,10 +171,17 @@ export async function getGameById(matchId: string): Promise<GameData | null> {
     return null;
   }
 
-  // Déterminer le joueur actuel (celui qui a le score le plus élevé dans le dernier round)
+  // Déterminer le joueur actuel en utilisant le current_player_id
   let currentPlayer = player1;
-  if (lastRound && lastRound.player_1_score < lastRound.player_2_score) {
-    currentPlayer = player2;
+  if (lastRound && lastRound.current_player_id) {
+    if (lastRound.current_player_id === player2.id) {
+      currentPlayer = player2;
+    }
+  } else {
+    // Si pas de current_player_id (anciennes parties), utiliser la logique précédente
+    if (lastRound && lastRound.player_1_score < lastRound.player_2_score) {
+      currentPlayer = player2;
+    }
   }
 
   // Vérifier si la partie est terminée
@@ -223,7 +229,7 @@ export async function getGameById(matchId: string): Promise<GameData | null> {
 // Mettre à jour une partie avec un nouveau tour
 export async function updateGameWithTurn(
   matchId: string,
-  dartScores: number[]
+  totalScore: number
 ): Promise<GameData> {
   const game = await getGameById(matchId);
 
@@ -233,7 +239,6 @@ export async function updateGameWithTurn(
 
   const currentPlayer = game.currentPlayer;
   const currentScore = game.scores[currentPlayer.username];
-  const totalScore = dartScores.reduce((sum, score) => sum + score, 0);
   const newScore = currentScore - totalScore;
 
   // Vérifier les règles du 301
@@ -272,8 +277,8 @@ export async function updateGameWithTurn(
   const nextRoundNumber = game.currentRound + 1;
 
   await sql`
-    INSERT INTO match_rounds (match_id, round_number, player_1_score, player_2_score)
-    VALUES (${matchId}, ${nextRoundNumber}, ${newPlayer1Score}, ${newPlayer2Score})
+    INSERT INTO match_rounds (match_id, round_number, player_1_score, player_2_score, current_player_id)
+    VALUES (${matchId}, ${nextRoundNumber}, ${newPlayer1Score}, ${newPlayer2Score}, ${nextPlayer.id})
   `;
 
   // Mettre à jour le match si la partie est terminée
@@ -301,4 +306,45 @@ export async function updateGameWithTurn(
 // Vérifier si une partie est terminée
 export function isGameFinished(game: GameData | null): boolean {
   return game?.isFinished || false;
+}
+
+// Récupérer les parties en cours
+export async function getOngoingGames(): Promise<GameData[]> {
+  const ongoingMatches = await sql<Row[]>`
+    SELECT id, player_1_id, player_2_id 
+    FROM matches 
+    WHERE winner_id IS NULL AND finished_at IS NULL
+    ORDER BY created_at DESC
+  `;
+
+  const games: GameData[] = [];
+
+  for (const match of ongoingMatches) {
+    const game = await getGameById(match.id);
+    if (game && !game.isFinished) {
+      games.push(game);
+    }
+  }
+
+  return games;
+}
+
+// Supprimer une partie
+export async function deleteGame(matchId: string): Promise<void> {
+  // Vérifier si matchId est défini
+  if (!matchId) {
+    throw new Error("matchId is undefined");
+  }
+
+  // Supprimer les rounds associés
+  await sql`
+    DELETE FROM match_rounds 
+    WHERE match_id = ${matchId}
+  `;
+
+  // Supprimer le match
+  await sql`
+    DELETE FROM matches 
+    WHERE id = ${matchId}
+  `;
 }

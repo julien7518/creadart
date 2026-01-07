@@ -6,12 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { submitTurn } from "./submit-turn";
+import { deleteGameAction } from "./delete-game";
 
 interface PlayerData {
   id: string;
   username: string;
   display_name: string;
-  avatar_url: string | null;
 }
 
 interface GameData {
@@ -69,6 +69,7 @@ export default function GamePage({
   const [dartScores, setDartScores] = useState(["", "", ""]);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   // Si initialGame est null, c'est que la partie n'existe pas
   useEffect(() => {
@@ -86,24 +87,53 @@ export default function GamePage({
     setDartScores(newScores);
   };
 
+  // Gérer la suppression de la partie
+  const handleDeleteGame = async () => {
+    if (!game) return;
+
+    try {
+      await deleteGameAction(game.id);
+    } catch (error) {
+      console.error("Erreur lors de la suppression de la partie:", error);
+      setSubmitError("Impossible de supprimer la partie");
+    }
+  };
+
   // Valider le tour
   const handleSubmitTurn = async () => {
     if (!game) return;
 
     setSubmitError(null);
 
-    // Vérifier que tous les scores sont remplis
-    if (dartScores.some((score) => score === "")) {
-      setSubmitError("Veuillez remplir tous les scores des fléchettes");
+    // Vérifier qu'au moins un score est rempli
+    const filledScores = dartScores.filter((score) => score !== "");
+    if (filledScores.length === 0) {
+      setSubmitError("Veuillez entrer au moins un score");
       return;
     }
 
-    // Convertir les scores en nombres
+    // Convertir les scores en nombres (les vides comptent comme 0)
     const numericScores = dartScores.map((score) => parseInt(score || "0"));
+
+    // Calculer le score total
+    const totalScore = numericScores.reduce((sum, score) => sum + score, 0);
+
+    // Vérifier que le score total est valide
+    if (totalScore > 180) {
+      setSubmitError("Le score total ne peut pas dépasser 180 points");
+      return;
+    }
+
+    // Vérifier que le score ne fera pas descendre en dessous de 0
+    const currentPlayerScore = game.scores[game.currentPlayer.username];
+    if (currentPlayerScore - totalScore < 0) {
+      setSubmitError("Impossible de descendre en dessous de 0 points");
+      return;
+    }
 
     try {
       startTransition(async () => {
-        const result = await submitTurn(game.id, numericScores);
+        const result = await submitTurn(game.id, totalScore, game.currentPlayer.id);
 
         // Mettre à jour l'état local avec les nouvelles données
         setGame((prevGame) => {
@@ -111,14 +141,14 @@ export default function GamePage({
 
           // Trouver le joueur gagnant complet à partir des joueurs existants
           const winner = result.game.winner
-            ? result.game.winner === prevGame.player1.username
+            ? result.game.winner === prevGame.player1.id
               ? prevGame.player1
               : prevGame.player2
             : null;
 
-          // Trouver le prochain joueur complet
+          // Trouver le prochain joueur complet en utilisant l'ID
           const nextPlayer =
-            result.game.currentPlayer === prevGame.player1.username
+            result.game.currentPlayer === prevGame.player1.id
               ? prevGame.player1
               : prevGame.player2;
 
@@ -133,13 +163,6 @@ export default function GamePage({
         });
 
         setDartScores(["", "", ""]); // Réinitialiser les inputs
-
-        // Vérifier si la partie est terminée
-        if (result.game.isFinished) {
-          setTimeout(() => {
-            alert(`Partie terminée ! ${result.game.winner} a gagné !`);
-          }, 100);
-        }
       });
     } catch (err) {
       if (err instanceof Error) {
@@ -149,14 +172,6 @@ export default function GamePage({
       }
     }
   };
-
-  // Vérifier si la partie est terminée
-  useEffect(() => {
-    if (game?.isFinished) {
-      // Vous pourriez rediriger ou afficher un message
-      // router.push(`/game/${game.id}/finished`);
-    }
-  }, [game?.isFinished, router]);
 
   if (loading) {
     return (
@@ -273,7 +288,9 @@ export default function GamePage({
               </div>
               <Button
                 onClick={handleSubmitTurn}
-                disabled={isPending || dartScores.some((score) => score === "")}
+                disabled={
+                  isPending || dartScores.every((score) => score === "")
+                }
                 className="w-full text-xl"
               >
                 {isPending ? "Envoi..." : "Valider"}

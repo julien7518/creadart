@@ -9,7 +9,6 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { getMatchById, getMatchRounds } from "@/lib/matches";
-import BackButton from "@/components/back-button";
 
 interface MatchDetailsPageProps {
   params: {
@@ -87,9 +86,9 @@ export default async function MatchDetailsPage({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Numéro de manche</TableHead>
-                  <TableHead>Score {match.player_1_name}</TableHead>
-                  <TableHead>Score {match.player_2_name}</TableHead>
+                  <TableHead>Manche</TableHead>
+                  <TableHead>{match.player_1_name}</TableHead>
+                  <TableHead>{match.player_2_name}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
