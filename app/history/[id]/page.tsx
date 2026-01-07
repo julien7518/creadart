@@ -1,4 +1,4 @@
-import PageShell from "@/components/layout/page-shell";
+import { PageShell } from "@/components/layout/page-shell";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
   Table,

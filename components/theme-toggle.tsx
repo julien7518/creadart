@@ -31,7 +31,7 @@ export function ThemeToggle({ className }: { className?: string }) {
           Sombre
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setTheme("system")}>
-          Appareil
+          Système
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

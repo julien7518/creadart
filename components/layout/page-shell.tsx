@@ -3,7 +3,7 @@ import BackButton from "@/components/back-button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 
-export default function PageShell({
+export function PageShell({
   pageName,
   children,
   isHome,

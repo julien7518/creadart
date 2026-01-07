@@ -1,4 +1,4 @@
-import PageShell from "@/components/layout/page-shell";
+import { PageShell } from "@/components/layout/page-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
@@ -17,18 +17,7 @@ export default async function Home() {
 
   return (
     <PageShell pageName="CreaDart" className="mb-8" isHome>
-      <div className="flex justify-center gap-4 mb-8">
-        <Link href="/game/new/">
-          <Button size="lg">Nouvelle partie</Button>
-        </Link>
-        <Link href="/history">
-          <Button size="lg" variant="outline">
-            Historique
-          </Button>
-        </Link>
-      </div>
-
-      <Card className="w-full max-w-4xl mx-auto">
+      <Card className="w-full max-w-4xl mx-auto mb-8">
         <CardHeader>
           <CardTitle className="text-2xl">Top Players</CardTitle>
         </CardHeader>
@@ -62,6 +51,17 @@ export default async function Home() {
           </Table>
         </CardContent>
       </Card>
+
+      <div className="flex justify-center gap-4">
+        <Link href="/game/new/">
+          <Button size="lg">Nouvelle partie</Button>
+        </Link>
+        <Link href="/history">
+          <Button size="lg" variant="outline">
+            Historique
+          </Button>
+        </Link>
+      </div>
     </PageShell>
   );
 }

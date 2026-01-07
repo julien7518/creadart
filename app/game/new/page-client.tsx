@@ -1,6 +1,6 @@
 "use client";
 
-import PageShell from "@/components/layout/page-shell";
+import { PageShell } from "@/components/layout/page-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -13,7 +13,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { startNewGame } from "./start-new-game";
 
 function SelectPlayer({
   players,
@@ -48,10 +50,36 @@ export default function NewGame({
 }) {
   const [player1, setPlayer1] = useState<string>("");
   const [player2, setPlayer2] = useState<string>("");
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
-  const handleStartGame = () => {
-    console.log("Joueur 1 sélectionné:", player1);
-    console.log("Joueur 2 sélectionné:", player2);
+  const isEmpty = player1 === "" || player2 === "";
+  const isSame = player1 === player2 && player1 !== "";
+  const isFormValid = !isEmpty && !isSame;
+
+  const handleStartGame = async () => {
+    if (!isFormValid) {
+      return;
+    }
+
+    setError(null);
+
+    try {
+      startTransition(async () => {
+        const gameId = await startNewGame(player1, player2);
+        if (!gameId) {
+          throw new Error("ID de partie non valide");
+        }
+        router.push(`/game/${gameId}`);
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("Une erreur inconnue est survenue");
+      }
+    }
   };
 
   return (
@@ -72,9 +100,21 @@ export default function NewGame({
               <SelectPlayer players={players} onValueChange={setPlayer2} />
             </div>
 
-            <Button className="w-full mt-6" onClick={handleStartGame}>
-              Commencez
+            <Button
+              className="w-full mt-3"
+              onClick={handleStartGame}
+              disabled={!isFormValid || isPending}
+            >
+              {isPending ? "Création..." : "Commencez"}
             </Button>
+            {isSame && (
+              <p className="flex justify-center text-red-500 mt-2">
+                Un joueur ne peut pas jouer contre lui même
+              </p>
+            )}
+            {error && (
+              <p className="flex justify-center text-red-500 mt-2">{error}</p>
+            )}
           </CardContent>
         </Card>
 
@@ -83,13 +123,49 @@ export default function NewGame({
             <CardTitle>Règles</CardTitle>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-2 text-sm">
-              <li>Chaque joueur commence avec 301 points</li>
-              <li>Le but est d'arriver le plus vite possible à 0</li>
-              <li>Chaque joueur à 3 fléchettes par tour</li>
-              <li>Il ne faut pas dépasser 0</li>
-              <li>Il est obligatoire de finir sur un double</li>
-            </ul>
+            <div className="space-y-4">
+              <div>
+                <ul className="space-y-3 text-sm">
+                  <li className="flex items-start gap-2">
+                    <span className="mt-0.5">📊</span>
+                    <span>
+                      Chaque joueur commence avec <strong>301 points</strong>
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="mt-0.5">🏆</span>
+                    <span>
+                      Le but est d'atteindre <strong>exactement 0 point</strong>{" "}
+                      en premier
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="mt-0.5">🎯</span>
+                    <span>
+                      Chaque joueur lance <strong>3 fléchettes par tour</strong>
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="mt-0.5">⚠️</span>
+                    <span>
+                      Il est interdit de <strong>dépasser 0 point</strong>
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="mt-0.5">🔒</span>
+                    <span>
+                      La partie se termine{" "}
+                      <strong>obligatoirement sur un double</strong>*
+                    </span>
+                  </li>
+                </ul>
+              </div>
+              <div className="pt-2 border-t border-gray-200">
+                <p className="text-xs text-gray-500 italic">
+                  *Un double correspond à la zone extérieure fine de la cible
+                </p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
