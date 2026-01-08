@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { submitTurn } from "./submit-turn";
 import { deleteGameAction } from "./delete-game";
+import { getCheckoutCombination } from "@/lib/checkout-calculator";
 
 interface PlayerData {
   id: string;
@@ -41,11 +42,10 @@ const PlayerScoreCard = ({
 }: PlayerScoreCardProps) => {
   return (
     <Card
-      className={`transition-all ${
-        isCurrentPlayer
+      className={`transition-all ${isCurrentPlayer
           ? "bg-primary text-primary-foreground border-primary shadow-lg"
           : ""
-      }`}
+        }`}
     >
       <CardHeader>
         <CardTitle className="text-xl">{player.display_name}</CardTitle>
@@ -128,6 +128,14 @@ export default function GamePage({
     const currentPlayerScore = game.scores[game.currentPlayer.username];
     if (currentPlayerScore - totalScore < 0) {
       setSubmitError("Impossible de descendre en dessous de 0 points");
+      return;
+    }
+
+    // Empêcher de laisser 1 point (impossible de finir sur un double)
+    if (currentPlayerScore - totalScore === 1) {
+      setSubmitError(
+        "Impossible de laisser 1 point (il faut finir par un double)"
+      );
       return;
     }
 
@@ -256,6 +264,26 @@ export default function GamePage({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* Affichage de la combinaison de checkout si disponible */}
+            {getCheckoutCombination(game.scores[game.currentPlayer.username]) && (
+              <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 text-center">
+                <p className="text-sm font-semibold text-primary mb-1">
+                  Checkout conseillé
+                </p>
+                <div className="flex justify-center gap-3">
+                  {getCheckoutCombination(
+                    game.scores[game.currentPlayer.username]
+                  )?.map((dart, i) => (
+                    <span
+                      key={i}
+                      className="inline-block bg-primary text-primary-foreground font-bold px-3 py-1 rounded text-lg"
+                    >
+                      {dart}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
             {/* Inputs des fléchettes */}
             <div className="flex flex-col gap-4 items-center justify-center">
               Scores
