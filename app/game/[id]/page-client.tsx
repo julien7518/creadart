@@ -126,8 +126,11 @@ export default function GamePage({
 
     // Vérifier que le score ne fera pas descendre en dessous de 0
     const currentPlayerScore = game.scores[game.currentPlayer.username];
-    if (currentPlayerScore - totalScore < 0) {
-      setSubmitError("Impossible de descendre en dessous de 0 points");
+    if (
+      currentPlayerScore - totalScore <= 1 &&
+      currentPlayerScore - totalScore !== 0
+    ) {
+      setSubmitError("Impossible de descendre en dessous de 1 points");
       return;
     }
 
@@ -268,7 +271,7 @@ export default function GamePage({
                       onChange={(e) =>
                         handleDartScoreChange(index, e.target.value)
                       }
-                      className="w-24 h-20 text-4xl font-bold rounded-xl text-center"
+                      className="w-24 h-20 text-4xl md:text-5xl leading-none font-bold rounded-xl text-center md:pr-3"
                       min="0"
                       max="60"
                       placeholder="0"
