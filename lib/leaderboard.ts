@@ -13,6 +13,7 @@ export async function getLeaderboard(): Promise<LeaderboardPlayer[]> {
     SELECT
       p.username,
       p.display_name,
+      p.total_points,
       COUNT(m.id) FILTER (WHERE m.winner_id = p.id) AS wins,
       COUNT(m.id) FILTER (
         WHERE m.winner_id IS NOT NULL AND m.winner_id != p.id
@@ -21,7 +22,10 @@ export async function getLeaderboard(): Promise<LeaderboardPlayer[]> {
     LEFT JOIN matches m
       ON p.id = m.player_1_id OR p.id = m.player_2_id
     GROUP BY p.id
-    ORDER BY wins DESC;
+    ORDER BY
+      wins DESC,
+      losses ASC,
+      p.total_points DESC;
   `;
 
   return rows.map((row, index) => ({

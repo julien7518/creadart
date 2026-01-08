@@ -14,6 +14,15 @@ import {
 } from "@/components/ui/dialog";
 import { createPlayer } from "@/lib/players";
 
+function normalizeUsername(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFD") // enlève les accents
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, "_") // espaces → _
+    .replace(/[^a-z0-9_]/g, ""); // supprime tout le reste
+}
+
 export function PlayerCreationDialog({
   open,
   onOpenChange,
@@ -85,7 +94,7 @@ export function PlayerCreationDialog({
               id="username"
               type="text"
               value={username}
-              onChange={(e) => setUsername(e.target.value.toLowerCase())}
+              onChange={(e) => setUsername(normalizeUsername(e.target.value))}
               placeholder="Entrez un nom d'utilisateur unique"
               required
             />
