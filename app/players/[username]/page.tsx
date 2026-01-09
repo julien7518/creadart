@@ -14,6 +14,8 @@ interface PlayerStats {
   total_score: number;
   avg_score: number;
   darts_thrown: number;
+  total_playtime: number;
+  current_win_streak: number;
 }
 
 export const dynamic = "force-dynamic";
@@ -26,14 +28,9 @@ export default async function PlayerPage({
   const { username } = await params;
 
   const [player] = await sql<PlayerStats[]>`
-    WITH all_matches AS (
-      -- Tous les matchs (terminés et en cours)
-      SELECT id, player_1_id, player_2_id, winner_id, finished_at 
-      FROM matches
-    ),
-    completed_matches AS (
+    WITH completed_matches AS (
       -- Seuls les matchs terminés sont pris en compte pour les victoires/défaites
-      SELECT id, player_1_id, player_2_id, winner_id 
+      SELECT id, player_1_id, player_2_id, winner_id, created_at
       FROM matches 
       WHERE winner_id IS NOT NULL AND finished_at IS NOT NULL
     ),
@@ -48,13 +45,13 @@ export default async function PlayerPage({
         -- Vérifier si c'est le dernier round
         (SELECT COUNT(*) FROM match_rounds mr2 WHERE mr2.match_id = mr.match_id) = mr.round_number AS is_last_round
       FROM match_rounds mr
-      JOIN all_matches am ON mr.match_id = am.id
+      JOIN matches m ON mr.match_id = m.id
     )
     
     SELECT
       p.username,
       p.display_name,
-      COUNT(DISTINCT am.id) AS games_played,
+      COUNT(DISTINCT m.id) AS games_played,
       COUNT(DISTINCT CASE WHEN cm.winner_id = p.id THEN cm.id END) AS wins,
       COUNT(DISTINCT CASE WHEN cm.winner_id != p.id AND cm.winner_id IS NOT NULL THEN cm.id END) AS losses,
       
@@ -70,11 +67,45 @@ export default async function PlayerPage({
       END AS avg_score,
       
       -- Nombre de fléchettes lancées = 3 * total_rounds_played
-      p.total_rounds_played * 3 AS darts_thrown
+      p.total_rounds_played * 3 AS darts_thrown,
+      
+      -- Temps total de jeu en secondes (matchs terminés uniquement)
+      COALESCE(
+        SUM(
+          EXTRACT(EPOCH FROM (m.finished_at - m.created_at))
+        ),
+        0
+      ) AS total_playtime,
+      
+      -- Meilleure série de victoires consécutives (historique)
+      COALESCE((
+        SELECT MAX(win_count)
+        FROM (
+          SELECT COUNT(*) AS win_count
+          FROM (
+            SELECT
+              m2.finished_at,
+              m2.winner_id,
+              SUM(
+                CASE
+                  WHEN m2.winner_id != p.id THEN 1
+                  ELSE 0
+                END
+              ) OVER (ORDER BY m2.finished_at) AS loss_group
+            FROM matches m2
+            WHERE
+              m2.finished_at IS NOT NULL
+              AND p.id IN (m2.player_1_id, m2.player_2_id)
+          ) grouped
+          WHERE winner_id = p.id
+          GROUP BY loss_group
+        ) streaks
+      ), 0) AS current_win_streak
     FROM players p
     LEFT JOIN completed_matches cm ON p.id = cm.player_1_id OR p.id = cm.player_2_id
-    LEFT JOIN all_matches am ON p.id = am.player_1_id OR p.id = am.player_2_id
-    LEFT JOIN all_rounds ar ON ar.match_id = am.id
+    LEFT JOIN matches m
+      ON p.id IN (m.player_1_id, m.player_2_id)
+     AND m.finished_at IS NOT NULL
     WHERE p.username = ${username}
     GROUP BY p.id;
   `;
@@ -100,12 +131,13 @@ export default async function PlayerPage({
             title="🔢 Ratio"
             value={
               player.games_played > 0
-                ? Number((player.wins / player.games_played).toFixed(2))
+                ? Number(((player.wins / player.games_played) * 100).toFixed(2))
                 : 0
             }
+            suffix="%"
           />
           <StatCard
-            title="🔥 Total de points"
+            title="💯 Total de points"
             value={player.total_score ?? 0}
           />
           <StatCard
@@ -116,6 +148,17 @@ export default async function PlayerPage({
             title="🎯 Fléchettes lancées"
             value={player.darts_thrown ?? 0}
           />
+          {/*
+          <StatCard
+            title="⏱️ Temps total de jeu"
+            value={(player.total_playtime) ?? 0}
+            format="time"
+          />
+          <StatCard
+            title="🔥 Meilleure série de victoires"
+            value={player.current_win_streak ?? 0}
+          />
+          */}
         </div>
 
         {/* SUMMARY */}
@@ -129,7 +172,10 @@ export default async function PlayerPage({
             défaites. Il a marqué un total de <b>{player.total_score ?? 0}</b>{" "}
             points, avec une moyenne de{" "}
             <b>{Number(player.avg_score ?? 0).toFixed(1)}</b> points par tour.
-            Il a lancé <b>{player.darts_thrown ?? 0}</b> fléchettes au total.
+            Il a lancé <b>{player.darts_thrown ?? 0}</b> fléchettes au total. Il
+            a une série actuelle de <b>{player.current_win_streak ?? 0}</b>{" "}
+            victoires consécutives. Temps total de jeu:{" "}
+            <b>{Math.round(player.total_playtime ?? 0)}</b> minutes.
           </CardContent>
         </Card>
       </div>
@@ -137,14 +183,37 @@ export default async function PlayerPage({
   );
 }
 
-function StatCard({ title, value }: { title: string; value: number }) {
+function StatCard({
+  title,
+  value,
+  suffix,
+  format,
+}: {
+  title: string;
+  value: number;
+  suffix?: string;
+  format?: string;
+}) {
+  const formatTime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+
+    if (hours > 0) {
+      return `${hours}h ${minutes.toString().padStart(2, "0")}min`;
+    } else {
+      return `${minutes}min ${remainingSeconds.toString().padStart(2, "0")}s`;
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-muted-foreground">{title}</CardTitle>
       </CardHeader>
       <CardContent className="text-4xl font-bold text-center">
-        {value}
+        {format === "time" ? formatTime(value) : value}
+        {suffix && " " + suffix}
       </CardContent>
     </Card>
   );

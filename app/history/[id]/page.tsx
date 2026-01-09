@@ -94,13 +94,21 @@ export default async function MatchDetailsPage({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rounds.map((round) => (
-                  <TableRow key={round.id}>
-                    <TableCell>{round.round_number}</TableCell>
-                    <TableCell>{round.player_1_score}</TableCell>
-                    <TableCell>{round.player_2_score}</TableCell>
-                  </TableRow>
-                ))}
+                {rounds
+                  .filter((round) => round.round_number % 2 === 1)
+                  .map((round) => {
+                    const displayRoundNumber = Math.ceil(
+                      round.round_number / 2
+                    );
+
+                    return (
+                      <TableRow key={round.id}>
+                        <TableCell>{displayRoundNumber}</TableCell>
+                        <TableCell>{round.player_1_score}</TableCell>
+                        <TableCell>{round.player_2_score}</TableCell>
+                      </TableRow>
+                    );
+                  })}
               </TableBody>
             </Table>
           </CardContent>
