@@ -63,8 +63,8 @@ export async function createGame(
   // Mapper les résultats SQL vers notre interface Player
   const playersData = players.map(mapRowToPlayer);
 
-  const player1 = playersData.find((p) => p.username === player1Username);
-  const player2 = playersData.find((p) => p.username === player2Username);
+  const player1 = playersData.find((p: Player) => p.username === player1Username);
+  const player2 = playersData.find((p: Player) => p.username === player2Username);
 
   if (!player1 || !player2) {
     throw new Error("Impossible de trouver les joueurs spécifiés");
@@ -147,8 +147,8 @@ export async function getGameById(matchId: string): Promise<GameData | null> {
   // Mapper les résultats SQL vers notre interface Player
   const playersData = players.map(mapRowToPlayer);
 
-  const player1 = playersData.find((p) => p.id === matchData.player_1_id);
-  const player2 = playersData.find((p) => p.id === matchData.player_2_id);
+  const player1 = playersData.find((p: Player) => p.id === matchData.player_1_id);
+  const player2 = playersData.find((p: Player) => p.id === matchData.player_2_id);
 
   if (!player1 || !player2) {
     console.error("Players not found for matchId:", matchId);
@@ -189,7 +189,7 @@ export async function getGameById(matchId: string): Promise<GameData | null> {
   let winner: Player | null = null;
 
   if (isFinished && matchData.winner_id) {
-    winner = playersData.find((p) => p.id === matchData.winner_id) || null;
+    winner = playersData.find((p: Player) => p.id === matchData.winner_id) || null;
 
     // Vérifier que le gagnant est défini
     if (!winner) {
@@ -244,6 +244,11 @@ export async function updateGameWithTurn(
   // Vérifier les règles du 301
   if (newScore < 0) {
     throw new Error("Cannot go below 0 points");
+  }
+
+  // Empêcher de laisser 1 point (impossible de finir sur un double)
+  if (newScore === 1) {
+    throw new Error("Cannot leave 1 point (must finish on a double)");
   }
 
   // Vérifier si la partie est terminée (score exact à 0)
