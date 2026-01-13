@@ -1,6 +1,12 @@
 import { PageShell } from "@/components/layout/page-shell";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
 import {
   Table,
   TableHeader,
@@ -13,6 +19,8 @@ import Link from "next/link";
 import { getLeaderboard } from "@/lib/leaderboard";
 import { getOngoingGames } from "@/lib/games";
 import { PlayerCreationButton } from "@/components/player-creation-button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { ArrowDown } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -67,47 +75,51 @@ export default async function Home() {
             <CardTitle className="">Classement complet</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-center">Rang</TableHead>
-                  <TableHead>Joueur</TableHead>
-                  <TableHead>Victoires</TableHead>
-                  <TableHead>Défaites</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {leaderboardData.slice(1).map((player) => {
-                  // Déterminer la couleur et l'emoji en fonction du rang
-                  let rankDisplay = String(player.rank);
+            <ScrollArea className="h-60 md:h-80">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-center">Rang</TableHead>
+                    <TableHead>Joueur</TableHead>
+                    <TableHead>Victoires</TableHead>
+                    <TableHead>Défaites</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {leaderboardData.slice(1).map((player) => {
+                    let rankDisplay = String(player.rank);
 
-                  if (player.rank === 2) {
-                    rankDisplay = "🥈";
-                  } else if (player.rank === 3) {
-                    rankDisplay = "🥉";
-                  }
+                    if (player.rank === 2) {
+                      rankDisplay = "🥈";
+                    } else if (player.rank === 3) {
+                      rankDisplay = "🥉";
+                    }
 
-                  return (
-                    <TableRow key={player.username}>
-                      <TableCell className="text-center">
-                        {rankDisplay}
-                      </TableCell>
-                      <TableCell>
-                        <Link
-                          href={`/players/${player.username}`}
-                          className="hover:underline"
-                        >
-                          {player.name}
-                        </Link>
-                      </TableCell>
-                      <TableCell>{player.wins}</TableCell>
-                      <TableCell>{player.losses}</TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                    return (
+                      <TableRow key={player.username}>
+                        <TableCell className="text-center">
+                          {rankDisplay}
+                        </TableCell>
+                        <TableCell>
+                          <Link
+                            href={`/players/${player.username}`}
+                            className="hover:underline"
+                          >
+                            {player.name}
+                          </Link>
+                        </TableCell>
+                        <TableCell>{player.wins}</TableCell>
+                        <TableCell>{player.losses}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </ScrollArea>
           </CardContent>
+          <div className="flex justify-center">
+            <ArrowDown size={15} className="text-foreground" />
+          </div>
         </Card>
       </div>
 

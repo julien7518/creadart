@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { submitTurn } from "./submit-turn";
 import { deleteGameAction } from "./delete-game";
+import { getCheckoutCombination } from "@/lib/checkout-calculator";
 
 interface PlayerData {
   id: string;
@@ -126,8 +127,11 @@ export default function GamePage({
 
     // Vérifier que le score ne fera pas descendre en dessous de 0
     const currentPlayerScore = game.scores[game.currentPlayer.username];
-    if (currentPlayerScore - totalScore < 0) {
-      setSubmitError("Impossible de descendre en dessous de 0 points");
+    if (
+      currentPlayerScore - totalScore <= 1 &&
+      currentPlayerScore - totalScore !== 0
+    ) {
+      setSubmitError("Impossible de descendre en dessous de 1 points");
       return;
     }
 
@@ -256,6 +260,32 @@ export default function GamePage({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* Affichage de la combinaison de checkout si disponible */}
+            {getCheckoutCombination(
+              game.scores[game.currentPlayer.username]
+            ) && (
+              <Card className="bg-primary/10 border border-primary/20">
+                <CardHeader className="text-center pb-2">
+                  <CardTitle className="text-sm font-semibold text-primary">
+                    Tirs conseillés
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="text-center">
+                  <div className="flex justify-center gap-3">
+                    {getCheckoutCombination(
+                      game.scores[game.currentPlayer.username]
+                    )?.map((dart, i) => (
+                      <span
+                        key={i}
+                        className="inline-block bg-primary text-primary-foreground font-bold px-3 py-1 rounded text-lg"
+                      >
+                        {dart}
+                      </span>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             {/* Inputs des fléchettes */}
             <div className="flex flex-col gap-4 items-center justify-center">
               Scores
@@ -268,7 +298,7 @@ export default function GamePage({
                       onChange={(e) =>
                         handleDartScoreChange(index, e.target.value)
                       }
-                      className="w-24 h-20 text-4xl font-bold rounded-xl text-center"
+                      className="w-24 h-20 text-4xl md:text-5xl leading-none font-bold rounded-xl text-center md:pr-3"
                       min="0"
                       max="60"
                       placeholder="0"
